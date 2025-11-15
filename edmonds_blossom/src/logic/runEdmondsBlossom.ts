@@ -1,5 +1,5 @@
 // src/logic/runEdmondsBlossom.ts
-import {
+import type{
   BlossomStep,
   Edge,
   MatchingEdge,
