@@ -1,0 +1,44 @@
+/* src/components_css/Controls.css */
+
+.controls-root {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.controls-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.controls-buttons button {
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  border: none;
+  background-color: #424242;
+  color: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.controls-buttons button:disabled {
+  background-color: #bdbdbd;
+  cursor: default;
+}
+
+.controls-info {
+  font-size: 0.85rem;
+}
+
+.controls-speed {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+}
+
+.controls-speed input {
+  width: 80px;
+  padding: 0.2rem 0.3rem;
+  font-size: 0.8rem;
+}
