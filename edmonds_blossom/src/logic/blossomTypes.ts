@@ -16,13 +16,17 @@ export interface Blossom {
   base: VertexId;
 }
 
+export type Layer = "EVEN" | "ODD" | "UNLABELED";
+
 export type StepType =
-  | 'INIT'
-  | 'START_BFS'
-  | 'GROW_TREE'
-  | 'FOUND_AUGMENTING_PATH'
-  | 'AUGMENT'
-  | 'DONE';
+  | "INIT"
+  | "START_BFS"
+  | "BFS_SEARCH"
+  | "BLOSSOM_DETECTED"
+  | "CONTRACT"
+  | "FOUND_AUGMENTING_PATH"
+  | "AUGMENT"
+  | "DONE";
 
 export interface BlossomStep {
   id: number;
@@ -33,8 +37,10 @@ export interface BlossomStep {
     edges: Edge[];
   };
   matching: MatchingEdge[];
-  blossoms: Blossom[];
-  layers: Record<VertexId, 'EVEN' | 'ODD' | 'UNLABELED'>;
+  layers: Record<VertexId, Layer>;
   exposedVertices: VertexId[];
+  parent: Record<VertexId, VertexId | null>;
+  blossoms: Blossom[];
   highlightPath: VertexId[];
+  highlightEdge?: Edge;
 }
