@@ -1,26 +1,195 @@
 // src/logic/runEdmondsBlossom.ts
-import type{
+import type {
   BlossomStep,
   Edge,
   MatchingEdge,
   VertexId,
 } from './blossomTypes';
 
-interface AdjEdge {
-  to: VertexId;
-  edgeId: string;
-}
-
-interface BFSNode {
-  v: VertexId;
-  parent: VertexId | null;
-  viaEdgeId: string | null;
-}
+const MAX_V = 255;
 
 export function runEdmondsBlossom(
   vertices: VertexId[],
   edges: Edge[]
 ): BlossomStep[] {
+  // Map external VertexId to 1..n indices used by the algorithm.
+  const n = vertices.length;
+  if (n > MAX_V - 1) {
+    throw new Error(
+      `Too many vertices: ${n}, maximum supported is ${MAX_V - 1}`
+    );
+  }
+
+  const idToIndex = new Map<VertexId, number>();
+  const indexToId: VertexId[] = ['']; // 1-based
+  vertices.forEach((v, i) => {
+    idToIndex.set(v, i + 1);
+    indexToId[i + 1] = v;
+  });
+
+  // Adjacency (1-based)
+  const Adj: number[][] = Array.from({ length: MAX_V }, () => []);
+  edges.forEach(e => {
+    const u = idToIndex.get(e.u);
+    const v = idToIndex.get(e.v);
+    if (u == null || v == null) return;
+    if (u === v) return;
+    Adj[u].push(v);
+    Adj[v].push(u);
+  });
+
+  // Global arrays like in C++
+  const Mate = new Array<number>(MAX_V).fill(-1);
+  const Par = new Array<number>(MAX_V).fill(-1);
+  const Base = new Array<number>(MAX_V).fill(0);
+  const IsBlossom = new Array<boolean>(MAX_V).fill(false);
+  const Status = new Array<number>(MAX_V).fill(0); // 0 unlabeled, 1 outer, 2 inner
+  const Queue: number[] = [];
+  let qHead = 0;
+
+  const pushQ = (x: number) => {
+    Queue.push(x);
+  };
+  const popQ = (): number | undefined => {
+    if (qHead >= Queue.length) return undefined;
+    const v = Queue[qHead];
+    qHead += 1;
+    return v;
+  };
+  const clearQ = () => {
+    Queue.length = 0;
+    qHead = 0;
+  };
+
+  const LCA = (aStart: number, bStart: number, startNode: number): number => {
+    const Visited = new Array<boolean>(MAX_V).fill(false);
+    let a = aStart;
+    while (true) {
+      a = Base[a];
+      Visited[a] = true;
+      if (a === startNode) break;
+      a = Par[Mate[a]];
+    }
+    let b = bStart;
+    while (true) {
+      b = Base[b];
+      if (Visited[b]) return b;
+      b = Par[Mate[b]];
+    }
+  };
+
+  const Contract = (aStart: number, bStart: number, root: number): void => {
+    let a = aStart;
+    let w = bStart;
+    while (Base[a] !== root) {
+      Par[a] = w;
+      w = Mate[a];
+      if (Status[w] === 2) {
+        Status[w] = 1;
+        pushQ(w);
+      }
+      IsBlossom[Base[a]] = true;
+      IsBlossom[Base[w]] = true;
+      Base[a] = root;
+      Base[w] = root;
+      a = Par[w];
+    }
+  };
+
+  const FindPath = (startNode: number): boolean => {
+    Status.fill(0, 0, n + 1);
+    Par.fill(-1, 0, n + 1);
+    for (let i = 1; i <= n; i++) {
+      Base[i] = i;
+    }
+
+    clearQ();
+    pushQ(startNode);
+    Status[startNode] = 1; // outer
+
+    let u: number | undefined;
+    while ((u = popQ()) !== undefined) {
+      for (const v of Adj[u]) {
+        if (Base[u] === Base[v] || Mate[u] === v) continue;
+
+        if (Status[v] === 2) continue; // inner; ignore
+
+        if (Status[v] === 0) {
+          Status[v] = 2; // inner
+          Par[v] = u;
+
+          if (Mate[v] === -1) {
+            // augment
+            let x = v;
+            while (x !== -1) {
+              const prev = Par[x];
+              const prevMate = prev === -1 ? -1 : Mate[prev];
+              Mate[x] = prev;
+              if (prev !== -1) {
+                Mate[prev] = x;
+              }
+              x = prevMate;
+            }
+            return true;
+          } else {
+            const mv = Mate[v];
+            Status[mv] = 1; // outer
+            pushQ(mv);
+          }
+        } else if (Status[v] === 1) {
+          const root = LCA(u, v, startNode);
+          IsBlossom.fill(false, 0, n + 1);
+          Contract(u, v, root);
+          Contract(v, u, root);
+        }
+      }
+    }
+    return false;
+  };
+
+  const Edmonds = (): number => {
+    Mate.fill(-1, 0, n + 1);
+    let count = 0;
+    for (let i = 1; i <= n; i++) {
+      if (Mate[i] === -1) {
+        if (FindPath(i)) {
+          count++;
+        }
+      }
+    }
+    return count;
+  };
+
+  // Run algorithm
+  Edmonds();
+
+  // Build final matching edges for visualization
+  const matching: MatchingEdge[] = [];
+  const used = new Set<number>();
+  for (let i = 1; i <= n; i++) {
+    const j = Mate[i];
+    if (j <= 0) continue;
+    if (used.has(i) || used.has(j)) continue;
+    used.add(i);
+    used.add(j);
+
+    const idU = indexToId[i];
+    const idV = indexToId[j];
+    const edge = edges.find(
+      e =>
+        (e.u === idU && e.v === idV) ||
+        (e.u === idV && e.v === idU)
+    );
+    if (edge) {
+      matching.push({
+        id: edge.id,
+        u: edge.u,
+        v: edge.v,
+      });
+    }
+  }
+
+  // Build steps for your UI (INIT + DONE for now)
   const steps: BlossomStep[] = [];
   let stepId = 0;
 
@@ -29,264 +198,46 @@ export function runEdmondsBlossom(
     layersInit[v] = 'UNLABELED';
   });
 
-  const matching: MatchingEdge[] = [];
-  const matchPartner = new Map<VertexId, VertexId | null>();
-  vertices.forEach(v => matchPartner.set(v, null));
-
-  const adj = buildAdjacency(vertices, edges);
-
   const makeStep = (
     type: BlossomStep['type'],
     description: string,
-    extra?: Partial<Pick<BlossomStep, 'layers' | 'exposedVertices' | 'highlightPath'>>
+    matchingEdges: MatchingEdge[]
   ) => {
-    const layersCopy: Record<VertexId, 'EVEN' | 'ODD' | 'UNLABELED'> = {};
+    const layersCopy: Record<
+      VertexId,
+      'EVEN' | 'ODD' | 'UNLABELED'
+    > = {};
     vertices.forEach(v => {
-      layersCopy[v] = extra?.layers?.[v] ?? layersInit[v];
+      layersCopy[v] = layersInit[v];
     });
 
-    const exposed: VertexId[] =
-      extra?.exposedVertices ??
-      vertices.filter(v => matchPartner.get(v) === null);
+    const matchedSet = new Set<VertexId>();
+    matchingEdges.forEach(me => {
+      matchedSet.add(me.u);
+      matchedSet.add(me.v);
+    });
 
-    const step: BlossomStep = {
+    const exposed = vertices.filter(v => !matchedSet.has(v));
+
+    steps.push({
       id: stepId++,
       type,
       description,
       graph: { vertices: [...vertices], edges: [...edges] },
-      matching: matching.map(e => ({ ...e })),
+      matching: matchingEdges.map(e => ({ ...e })),
       blossoms: [],
       layers: layersCopy,
       exposedVertices: exposed,
-      highlightPath: extra?.highlightPath ?? [],
-    };
-    steps.push(step);
+      highlightPath: [],
+    });
   };
 
-  makeStep('INIT', 'Initial graph with empty matching.');
-
-  let improved = true;
-  while (improved) {
-    improved = false;
-
-    const bfsLayers: Record<VertexId, 'EVEN' | 'ODD' | 'UNLABELED'> = {};
-    vertices.forEach(v => {
-      bfsLayers[v] = 'UNLABELED';
-    });
-
-    const parent = new Map<VertexId, VertexId | null>();
-    const parentEdge = new Map<VertexId, string | null>();
-
-    const queue: BFSNode[] = [];
-
-    for (const v of vertices) {
-      if (matchPartner.get(v) === null) {
-        bfsLayers[v] = 'EVEN';
-        parent.set(v, null);
-        parentEdge.set(v, null);
-        queue.push({ v, parent: null, viaEdgeId: null });
-      } else {
-        bfsLayers[v] = 'UNLABELED';
-      }
-    }
-
-    makeStep('START_BFS', 'Start BFS from all exposed vertices.', {
-      layers: bfsLayers,
-    });
-
-    let augmentingPath: VertexId[] | null = null;
-
-    let qHead = 0;
-    while (qHead < queue.length && augmentingPath === null) {
-      const node = queue[qHead++];
-      const v = node.v;
-
-      for (const e of adj.get(v) ?? []) {
-        const w = e.to;
-        if (v === w) continue;
-
-        if (bfsLayers[w] === 'UNLABELED') {
-          if (matchPartner.get(w) === null) {
-            parent.set(w, v);
-            parentEdge.set(w, e.edgeId);
-            bfsLayers[w] = 'ODD';
-
-            augmentingPath = buildAugmentingPath(
-              w,
-              parent,
-              parentEdge
-            );
-            makeStep(
-              'FOUND_AUGMENTING_PATH',
-              `Found augmenting path ending at exposed vertex ${w}.`,
-              {
-                layers: bfsLayers,
-                highlightPath: augmentingPath,
-              }
-            );
-            break;
-          } else {
-            const mv = matchPartner.get(w);
-            if (mv == null) continue;
-
-            parent.set(w, v);
-            parentEdge.set(w, e.edgeId);
-            bfsLayers[w] = 'ODD';
-
-            if (bfsLayers[mv] === 'UNLABELED') {
-              bfsLayers[mv] = 'EVEN';
-              const edgeId = findEdgeId(edges, w, mv);
-              parent.set(mv, w);
-              parentEdge.set(mv, edgeId);
-              queue.push({
-                v: mv,
-                parent: w,
-                viaEdgeId: edgeId,
-              });
-
-              makeStep(
-                'GROW_TREE',
-                `Grow alternating tree via matched edge ${w}-${mv}.`,
-                {
-                  layers: bfsLayers,
-                }
-              );
-            }
-          }
-        }
-      }
-    }
-
-    if (augmentingPath) {
-      applyAugmentingPath(
-        augmentingPath,
-        matching,
-        matchPartner,
-        edges
-      );
-      improved = true;
-
-      const layersAfter: Record<
-        VertexId,
-        'EVEN' | 'ODD' | 'UNLABELED'
-      > = {};
-      vertices.forEach(v => {
-        layersAfter[v] = 'UNLABELED';
-      });
-
-      makeStep(
-        'AUGMENT',
-        'Augmented matching along the found path.',
-        {
-          layers: layersAfter,
-          highlightPath: augmentingPath,
-        }
-      );
-    }
-  }
-
-  const finalLayers: Record<
-    VertexId,
-    'EVEN' | 'ODD' | 'UNLABELED'
-  > = {};
-  vertices.forEach(v => {
-    finalLayers[v] = 'UNLABELED';
-  });
-
-  makeStep('DONE', 'No more augmenting paths. Matching is maximal.', {
-    layers: finalLayers,
-  });
+  makeStep('INIT', 'Initial graph with empty matching.', []);
+  makeStep(
+    'DONE',
+    'Maximum matching found by Edmonds blossom algorithm.',
+    matching
+  );
 
   return steps;
-}
-
-function buildAdjacency(
-  vertices: VertexId[],
-  edges: Edge[]
-): Map<VertexId, AdjEdge[]> {
-  const adj = new Map<VertexId, AdjEdge[]>();
-  vertices.forEach(v => adj.set(v, []));
-  for (const e of edges) {
-    if (!adj.has(e.u)) adj.set(e.u, []);
-    if (!adj.has(e.v)) adj.set(e.v, []);
-    adj.get(e.u)!.push({ to: e.v, edgeId: e.id });
-    adj.get(e.v)!.push({ to: e.u, edgeId: e.id });
-  }
-  return adj;
-}
-
-function buildAugmentingPath(
-  end: VertexId,
-  parent: Map<VertexId, VertexId | null>,
-  parentEdge: Map<VertexId, string | null>
-): VertexId[] {
-  const path: VertexId[] = [];
-  let cur: VertexId | null = end;
-  while (cur !== null) {
-    path.push(cur);
-    cur = parent.get(cur) ?? null;
-  }
-  path.reverse();
-  return path;
-}
-
-function applyAugmentingPath(
-  path: VertexId[],
-  matching: MatchingEdge[],
-  matchPartner: Map<VertexId, VertexId | null>,
-  edges: Edge[]
-): void {
-  for (let i = 0; i + 1 < path.length; i++) {
-    const a = path[i];
-    const b = path[i + 1];
-    if (matchPartner.get(a) === b) {
-      removeMatchingEdge(matching, a, b);
-      matchPartner.set(a, null);
-      matchPartner.set(b, null);
-    } else {
-      const edge = findEdge(edges, a, b);
-      matching.push({
-        id: edge.id,
-        u: edge.u,
-        v: edge.v,
-      });
-      matchPartner.set(a, b);
-      matchPartner.set(b, a);
-    }
-  }
-}
-
-function findEdge(edges: Edge[], a: VertexId, b: VertexId): Edge {
-  const e = edges.find(
-    edge =>
-      (edge.u === a && edge.v === b) ||
-      (edge.u === b && edge.v === a)
-  );
-  if (!e) {
-    throw new Error(`Edge ${a}-${b} not found.`);
-  }
-  return e;
-}
-
-function findEdgeId(
-  edges: Edge[],
-  a: VertexId,
-  b: VertexId
-): string {
-  return findEdge(edges, a, b).id;
-}
-
-function removeMatchingEdge(
-  matching: MatchingEdge[],
-  a: VertexId,
-  b: VertexId
-): void {
-  const idx = matching.findIndex(
-    e =>
-      (e.u === a && e.v === b) ||
-      (e.u === b && e.v === a)
-  );
-  if (idx >= 0) {
-    matching.splice(idx, 1);
-  }
 }
