@@ -26,7 +26,7 @@ export const GraphInputForm: React.FC<GraphInputFormProps> = ({
 
   const parseVertices = (text: string): VertexId[] => {
     return text
-      .split(',')
+      .split(' ')
       .map(v => v.trim())
       .filter(v => v.length > 0);
   };
@@ -48,7 +48,7 @@ export const GraphInputForm: React.FC<GraphInputFormProps> = ({
       }
       if (!set.has(a) || !set.has(b)) {
         throw new Error(
-          `Edge ${a} ${b} uses unknown vertex (vertices are ${vs.join(', ')})`
+          `Edge ${a} ${b} uses unknown vertex (vertices are ${vs.join(' ')})`
         );
       }
       const id = `e${idCounter++}`;
@@ -87,13 +87,13 @@ export const GraphInputForm: React.FC<GraphInputFormProps> = ({
       <h2>Graph Input</h2>
 
       <label className="gif-label">
-        Vertices (comma separated)
+        Vertices
         <input
           className="gif-input"
           type="text"
           value={vertexText}
           onChange={e => setVertexText(e.target.value)}
-          placeholder="Example: 1,2,3,4,5"
+          placeholder="Example: 1 2 3 4 5"
         />
       </label>
 
