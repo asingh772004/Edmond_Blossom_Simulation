@@ -1,14 +1,14 @@
-import './App.css'
+// src/App.tsx
+import React from 'react';
+import './App.css';
+import { SimulatorPage } from './pages/SimulatorPage';
 
-function App() {
-
-
+const App: React.FC = () => {
   return (
-    <>
-      <div></div>
-      <div></div>
-    </>
-  )
-}
+    <div className="app-root">
+      <SimulatorPage />
+    </div>
+  );
+};
 
-export default App
+export default App;
