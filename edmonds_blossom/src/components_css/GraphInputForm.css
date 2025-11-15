@@ -1,0 +1,52 @@
+/* src/components_css/GraphInputForm.css */
+
+.graph-input-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.gif-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+}
+
+.gif-input,
+.gif-textarea {
+  margin-top: 0.3rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #bdbdbd;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.gif-textarea {
+  resize: vertical;
+}
+
+.gif-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.gif-buttons button {
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  border: none;
+  background-color: #1976d2;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.gif-buttons button:hover {
+  background-color: #1565c0;
+}
+
+.gif-error {
+  color: #d32f2f;
+  font-size: 0.8rem;
+}
