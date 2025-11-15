@@ -1,4 +1,4 @@
-// src/algorithms/blossomTypes.ts
+// src/logic/blossomTypes.ts
 
 export type VertexId = string;
 
@@ -22,9 +22,6 @@ export type StepType =
   | 'GROW_TREE'
   | 'FOUND_AUGMENTING_PATH'
   | 'AUGMENT'
-  | 'FOUND_BLOSSOM'
-  | 'CONTRACT_BLOSSOM'
-  | 'EXPAND_BLOSSOM'
   | 'DONE';
 
 export interface BlossomStep {
@@ -37,7 +34,7 @@ export interface BlossomStep {
   };
   matching: MatchingEdge[];
   blossoms: Blossom[];
-  layers?: Record<VertexId, 'EVEN' | 'ODD' | 'UNLABELED'>;
-  exposedVertices?: VertexId[];
-  highlightPath?: VertexId[];
+  layers: Record<VertexId, 'EVEN' | 'ODD' | 'UNLABELED'>;
+  exposedVertices: VertexId[];
+  highlightPath: VertexId[];
 }
