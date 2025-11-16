@@ -5,7 +5,7 @@ import { GraphInputForm } from '../components/GraphInputForm';
 import { Controls } from '../components/Controls';
 import { GraphView } from '../components/GraphView';
 import { runEdmondsBlossom } from '../logic/runEdmondsBlossom';
-import type{
+import type {
   BlossomStep,
   Edge,
   VertexId,
@@ -19,12 +19,15 @@ export const SimulatorPage: React.FC = () => {
   const [playing, setPlaying] = useState(false);
   const [intervalMs, setIntervalMs] = useState(1000);
 
-  const handleRun = () => {
-    const resultSteps = runEdmondsBlossom(vertices, edges);
+  const handleRun = (vs: VertexId[], es: Edge[]) => {
+    setVertices(vs);
+    setEdges(es);
+    const resultSteps = runEdmondsBlossom(vs, es);
     setSteps(resultSteps);
     setCurrentStepIndex(0);
     setPlaying(false);
   };
+
 
   useEffect(() => {
     if (!playing || steps.length === 0) return;
@@ -54,7 +57,7 @@ export const SimulatorPage: React.FC = () => {
             edges={edges}
             onChangeVertices={setVertices}
             onChangeEdges={setEdges}
-            onRun={handleRun}
+            onRun={(vs, es) => handleRun(vs, es)}
           />
           {currentStep ? (
             <div className="step-info">

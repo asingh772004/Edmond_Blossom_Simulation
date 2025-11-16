@@ -8,7 +8,7 @@ interface GraphInputFormProps {
   edges: Edge[];
   onChangeVertices: (vs: VertexId[]) => void;
   onChangeEdges: (es: Edge[]) => void;
-  onRun: () => void;
+  onRun: (vs: VertexId[], es: Edge[]) => void;
 }
 
 export const GraphInputForm: React.FC<GraphInputFormProps> = ({
@@ -65,7 +65,7 @@ export const GraphInputForm: React.FC<GraphInputFormProps> = ({
       onChangeVertices(vs);
       onChangeEdges(es);
       setError(null);
-      onRun();
+      onRun(vs, es);
     } catch (e) {
       const err = e as Error;
       setError(err.message);
