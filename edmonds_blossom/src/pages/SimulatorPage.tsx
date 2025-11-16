@@ -56,6 +56,25 @@ export const SimulatorPage: React.FC = () => {
             onChangeEdges={setEdges}
             onRun={handleRun}
           />
+          {currentStep ? (
+            <div className="step-info">
+              <div className="step-info-header">
+                Step {currentStep.id}
+              </div>
+              <div className="step-info-content">
+                {currentStep.description}
+              </div>
+            </div>
+          ) : (
+            <div className="step-info">
+              <div className="step-info-header">
+                Step Info
+              </div>
+              <div className="step-info-content step-placeholder">
+                Enter a graph and run the algorithm to see steps here.
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="simulator-right">
@@ -77,18 +96,8 @@ export const SimulatorPage: React.FC = () => {
             onChangeInterval={setIntervalMs}
           />
 
-          {currentStep ? (
-            <>
-              <GraphView step={currentStep} />
-              <div className="step-description">
-                <strong>Step {currentStep.id}:</strong>{' '}
-                {currentStep.description}
-              </div>
-            </>
-          ) : (
-            <div className="step-placeholder">
-              Enter a graph and run the algorithm to see steps here.
-            </div>
+          {currentStep && (
+            <GraphView step={currentStep} />
           )}
         </div>
       </div>

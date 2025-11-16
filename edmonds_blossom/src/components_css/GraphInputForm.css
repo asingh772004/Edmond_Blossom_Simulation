@@ -6,6 +6,10 @@
   gap: 0.75rem;
 }
 
+.graph-input-form h2 {
+  margin: 0 0 0.5rem 0;
+}
+
 .gif-label {
   display: flex;
   flex-direction: column;

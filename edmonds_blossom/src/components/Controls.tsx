@@ -64,10 +64,11 @@ export const Controls: React.FC<ControlsProps> = ({
         Auto step interval (ms)
         <input
           type="number"
-          min={100}
+          min={0}
+          max={1000}
           value={intervalMs}
           onChange={e =>
-            onChangeInterval(Number(e.target.value) || 1000)
+            onChangeInterval(Number(e.target.value) || 0)
           }
         />
       </label>

@@ -58,27 +58,17 @@ export const GraphInputForm: React.FC<GraphInputFormProps> = ({
     return result;
   };
 
-  const handleApply = () => {
+  const handleRunClick = () => {
     try {
       const vs = parseVertices(vertexText);
       const es = parseEdges(edgesText, vs);
       onChangeVertices(vs);
       onChangeEdges(es);
       setError(null);
+      onRun();
     } catch (e) {
       const err = e as Error;
       setError(err.message);
-    }
-  };
-
-  const handleRunClick = () => {
-    try {
-      handleApply();
-      if (!error) {
-        onRun();
-      }
-    } catch {
-      // error state already set in handleApply
     }
   };
 
@@ -111,9 +101,6 @@ export const GraphInputForm: React.FC<GraphInputFormProps> = ({
       {error && <div className="gif-error">{error}</div>}
 
       <div className="gif-buttons">
-        <button type="button" onClick={handleApply}>
-          Apply
-        </button>
         <button type="button" onClick={handleRunClick}>
           Run Algorithm
         </button>
