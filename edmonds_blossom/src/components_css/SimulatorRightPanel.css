@@ -7,12 +7,14 @@
   overflow: hidden;
 }
 
+/*
 .graph-view-title {
   margin: 0;
   font-size: 1.2rem;
   text-align: center;
   font-weight: 600;
 }
+*/ /* <- This style block was removed */
 
 .graph-view-placeholder {
   display: flex;
