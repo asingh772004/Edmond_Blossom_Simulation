@@ -94,7 +94,11 @@ export const GraphView: React.FC<GraphViewProps> = ({ step }) => {
           if (!u || !v) return null;
 
           const isMatch = isMatchingEdge(e);
-          const isHighlightEdge = step.highlightEdge?.id === e.id;
+
+          const isHighlightEdge = 
+            step.highlightEdge?.id === e.id ||
+            (step.highlightEdge?.u === e.u && step.highlightEdge?.v === e.v) ||
+            (step.highlightEdge?.u === e.v && step.highlightEdge?.v === e.u);
 
           const isAugmentingPathEdge =
             (step.type === 'FOUND_AUGMENTING_PATH' || step.type === 'AUGMENT') &&
@@ -102,23 +106,39 @@ export const GraphView: React.FC<GraphViewProps> = ({ step }) => {
             highlightSet.has(e.v);
 
           const isBlossomEdge = isBlossomEvent && blossomVertexSet.has(e.u) && blossomVertexSet.has(e.v);
+          
+          const isBlossomDetectedEdge =
+            step.type === 'BLOSSOM_DETECTED' &&
+            highlightSet.has(e.u) &&
+            highlightSet.has(e.v);
 
-          const strokeColor = isBlossomEdge
-            ? 'purple'
-            : isHighlightEdge
-              ? 'blue'
-              : isAugmentingPathEdge
-                ? '#ff5722'
-                : isMatch
-                  ? '#d32f2f'
-                  : '#b0bec5';
+          let strokeColor = '#b0bec5';
+          let strokeWidth = 1.5;
 
-          const strokeWidth =
-            isBlossomEdge || isHighlightEdge || isAugmentingPathEdge
-              ? 4
-              : isMatch
-                ? 3
-                : 1.5;
+          if (isMatch) {
+            strokeColor = '#d32f2f';
+            strokeWidth = 3;
+          }
+
+          if (isAugmentingPathEdge) {
+            strokeColor = '#ff5722';
+            strokeWidth = 4;
+          }
+
+          if (isBlossomEdge) {
+            strokeColor = 'purple';
+            strokeWidth = 4;
+          }
+
+          if (isBlossomDetectedEdge) {
+            strokeColor = 'purple';
+            strokeWidth = isMatch ? 5 : 4; 
+          }
+          
+          if (isHighlightEdge) {
+            strokeColor = 'blue';
+            strokeWidth = 4;
+          }
 
           return (
             <line

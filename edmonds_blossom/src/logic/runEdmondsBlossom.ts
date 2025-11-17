@@ -337,7 +337,38 @@ const findPath = (startNode: number): boolean => {
                 const root = lca(u, v);
                 if (root === 0) continue;
                 const e = findEdge(u, v);
-                makeStep('BLOSSOM_DETECTED', `Blossom detected: edge ${indexToId[u]}-${indexToId[v]} connects two outer nodes. Base: ${indexToId[root]}.`, [], e, undefined);
+
+                const blossomPath: number[] = [];
+                blossomPath.push(u);
+                blossomPath.push(v);
+        
+                let curU = u;
+                while(curU !== NO_MATCH && Base[curU] !== root) {
+                    const mateU = Mate[curU];
+                    if (mateU === NO_MATCH) break;
+                    const parentU = Par[mateU];
+                    if (parentU === NO_MATCH) break;
+
+                    blossomPath.push(mateU);
+                    blossomPath.push(parentU);
+                    curU = parentU;
+                }
+        
+                let curV = v;
+                while(curV !== NO_MATCH && Base[curV] !== root) {
+                    const mateV = Mate[curV];
+                    if (mateV === NO_MATCH) break;
+                    const parentV = Par[mateV];
+                    if (parentV === NO_MATCH) break;
+
+                    blossomPath.push(mateV);
+                    blossomPath.push(parentV);
+                    curV = parentV;
+                }
+                
+                const highlightPath = Array.from(new Set(blossomPath)).map(i => indexToId[i]);
+
+                makeStep('BLOSSOM_DETECTED', `Blossom detected: edge ${indexToId[u]}-${indexToId[v]} connects two outer nodes. Base: ${indexToId[root]}.`, highlightPath, e, undefined);
                 contract(u, v, root);
             }
         }
@@ -387,6 +418,6 @@ export function runEdmondsBlossom(vertices: VertexId[], edges: Edge[]): BlossomS
     for (const root of Array.from(blossomMap.keys())) {
         expandBlossom(root, `Final expansion of blossom B${indexToId[root]} for visualization.`);
     }
-    makeStep('DONE', `Algorithm finished. Maximum matching found. Final size: ${getMatchingEdges().length}`, []);
+    makeStep('DONE', `Algorithm finished. Maximum matching found. Final size: ${getMatchingEdges().length}.`, []);
     return steps;
 }
