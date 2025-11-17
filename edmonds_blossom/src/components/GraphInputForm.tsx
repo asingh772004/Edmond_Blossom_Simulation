@@ -18,7 +18,7 @@ export const GraphInputForm: React.FC<GraphInputFormProps> = ({
   onChangeEdges,
   onRun,
 }) => {
-  const [vertexText, setVertexText] = useState(vertices.join(','));
+  const [vertexText, setVertexText] = useState(vertices.join(' '));
   const [edgesText, setEdgesText] = useState(
     edges.map(e => `${e.u} ${e.v}`).join('\n')
   );

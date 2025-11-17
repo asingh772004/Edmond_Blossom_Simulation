@@ -1,5 +1,5 @@
 // src/components/GraphView.tsx
-import React, { useMemo } from 'react'; // <-- Added useMemo
+import React, { useMemo } from 'react';
 import '../components_css/GraphView.css';
 import type { BlossomStep } from '../logic/blossomTypes';
 
@@ -52,18 +52,14 @@ export const GraphView: React.FC<GraphViewProps> = ({ step }) => {
   const isExposed = (id: string) =>
     step.exposedVertices.includes(id);
 
-  // --- New Logic ---
-  // 1. Determine blossom event vertices
   const [isBlossomEvent, blossomVertexSet] = useMemo(() => {
     let vertexSet = new Set<string>();
     let isEvent = false;
 
     if (step.type === 'EXPAND') {
-      // On EXPAND, highlightPath contains the blossom members
       vertexSet = new Set(step.highlightPath);
       isEvent = true;
     } else if (step.type === 'CONTRACT' && step.activeBlossomId) {
-      // On CONTRACT, find the blossom in the list
       const activeBlossom = step.blossoms.find(b => b.id === step.activeBlossomId);
       if (activeBlossom) {
         vertexSet = new Set(activeBlossom.vertices);
@@ -73,9 +69,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ step }) => {
     return [isEvent, vertexSet];
   }, [step.type, step.highlightPath, step.blossoms, step.activeBlossomId]);
 
-  // 2. We still need the augmenting path logic
   const highlightSet = new Set(step.highlightPath);
-  // --- End New Logic ---
 
 
   return (

@@ -48,7 +48,7 @@ export const SimulatorRightPanel: React.FC<SimulatorRightPanelProps> = ({
         onChangeInterval={onChangeInterval}
       />
       
-      {/* <h2 className="graph-view-title">Graph View</h2>  <- This line was removed */}
+      {}
 
       {currentStep ? (
         <GraphView step={currentStep} />
