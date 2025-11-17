@@ -1,9 +1,9 @@
 // src/pages/SimulatorPage.tsx
 import React, { useEffect, useState } from 'react';
 import '../pages_css/SimulatorPage.css';
-import { GraphInputForm } from '../components/GraphInputForm';
-import { Controls } from '../components/Controls';
-import { GraphView } from '../components/GraphView';
+import { SimulatorBanner } from '../components/SimulatorBanner';
+import { SimulatorLeftPanel } from '../components/SimulatorLeftPanel';
+import { SimulatorRightPanel } from '../components/SimulatorRightPanel';
 import { runEdmondsBlossom } from '../logic/runEdmondsBlossom';
 import type {
   BlossomStep,
@@ -35,6 +35,7 @@ export const SimulatorPage: React.FC = () => {
     const id = window.setInterval(() => {
       setCurrentStepIndex(prev => {
         if (prev >= steps.length - 1) {
+          setPlaying(false); // Stop playing at the end
           return prev;
         }
         return prev + 1;
@@ -48,61 +49,36 @@ export const SimulatorPage: React.FC = () => {
 
   return (
     <div className="simulator-page">
-      <h1 className="simulator-title">Edmonds Blossom Simulator</h1>
+      <SimulatorBanner />
 
       <div className="simulator-layout">
-        <div className="simulator-left">
-          <GraphInputForm
-            vertices={vertices}
-            edges={edges}
-            onChangeVertices={setVertices}
-            onChangeEdges={setEdges}
-            onRun={(vs, es) => handleRun(vs, es)}
-          />
-          {currentStep ? (
-            <div className="step-info">
-              <div className="step-info-header">
-                Step {currentStep.id}
-              </div>
-              <div className="step-info-content">
-                {currentStep.description}
-              </div>
-            </div>
-          ) : (
-            <div className="step-info">
-              <div className="step-info-header">
-                Step Info
-              </div>
-              <div className="step-info-content step-placeholder">
-                Enter a graph and run the algorithm to see steps here.
-              </div>
-            </div>
-          )}
-        </div>
+        <SimulatorLeftPanel
+          vertices={vertices}
+          edges={edges}
+          currentStep={currentStep}
+          onChangeVertices={setVertices}
+          onChangeEdges={setEdges}
+          onRun={handleRun}
+        />
 
-        <div className="simulator-right">
-          <Controls
-            hasSteps={steps.length > 0}
-            currentStepIndex={currentStepIndex}
-            totalSteps={steps.length}
-            playing={playing}
-            intervalMs={intervalMs}
-            onNext={() =>
-              setCurrentStepIndex(i =>
-                Math.min(i + 1, steps.length - 1)
-              )
-            }
-            onPrev={() =>
-              setCurrentStepIndex(i => Math.max(i - 1, 0))
-            }
-            onPlayToggle={() => setPlaying(p => !p)}
-            onChangeInterval={setIntervalMs}
-          />
-
-          {currentStep && (
-            <GraphView step={currentStep} />
-          )}
-        </div>
+        <SimulatorRightPanel
+          currentStep={currentStep}
+          hasSteps={steps.length > 0}
+          currentStepIndex={currentStepIndex}
+          totalSteps={steps.length}
+          playing={playing}
+          intervalMs={intervalMs}
+          onNext={() =>
+            setCurrentStepIndex(i =>
+              Math.min(i + 1, steps.length - 1)
+            )
+          }
+          onPrev={() =>
+            setCurrentStepIndex(i => Math.max(i - 1, 0))
+          }
+          onPlayToggle={() => setPlaying(p => !p)}
+          onChangeInterval={setIntervalMs}
+        />
       </div>
     </div>
   );
