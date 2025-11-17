@@ -7,15 +7,6 @@
   overflow: hidden;
 }
 
-/*
-.graph-view-title {
-  margin: 0;
-  font-size: 1.2rem;
-  text-align: center;
-  font-weight: 600;
-}
-*/ /* <- This style block was removed */
-
 .graph-view-placeholder {
   display: flex;
   justify-content: center;
@@ -25,7 +16,7 @@
   border-radius: 4px;
   background-color: #fafafa;
   padding: 0.5rem;
-  min-height: 460px; /* From original GraphView CSS */
+  min-height: 460px;
   color: #999;
   font-style: italic;
 }

@@ -1,7 +1,7 @@
 // src/components/GraphView.tsx
-import React, { useMemo } from 'react';
+import React, { useMemo } from 'react'; // <-- Added useMemo
 import '../components_css/GraphView.css';
-import type{ BlossomStep } from '../logic/blossomTypes';
+import type { BlossomStep } from '../logic/blossomTypes';
 
 interface GraphViewProps {
   step: BlossomStep;
@@ -52,7 +52,31 @@ export const GraphView: React.FC<GraphViewProps> = ({ step }) => {
   const isExposed = (id: string) =>
     step.exposedVertices.includes(id);
 
+  // --- New Logic ---
+  // 1. Determine blossom event vertices
+  const [isBlossomEvent, blossomVertexSet] = useMemo(() => {
+    let vertexSet = new Set<string>();
+    let isEvent = false;
+
+    if (step.type === 'EXPAND') {
+      // On EXPAND, highlightPath contains the blossom members
+      vertexSet = new Set(step.highlightPath);
+      isEvent = true;
+    } else if (step.type === 'CONTRACT' && step.activeBlossomId) {
+      // On CONTRACT, find the blossom in the list
+      const activeBlossom = step.blossoms.find(b => b.id === step.activeBlossomId);
+      if (activeBlossom) {
+        vertexSet = new Set(activeBlossom.vertices);
+        isEvent = true;
+      }
+    }
+    return [isEvent, vertexSet];
+  }, [step.type, step.highlightPath, step.blossoms, step.activeBlossomId]);
+
+  // 2. We still need the augmenting path logic
   const highlightSet = new Set(step.highlightPath);
+  // --- End New Logic ---
+
 
   return (
     <div className="graph-view-root">
@@ -65,10 +89,35 @@ export const GraphView: React.FC<GraphViewProps> = ({ step }) => {
           const u = posMap.get(e.u);
           const v = posMap.get(e.v);
           if (!u || !v) return null;
-          const isMatch = isMatchingEdge(e.id);
 
-          const inPath =
-            highlightSet.has(e.u) && highlightSet.has(e.v);
+          // --- Updated Color Logic ---
+          const isMatch = isMatchingEdge(e.id);
+          const isHighlightEdge = step.highlightEdge?.id === e.id;
+
+          const isAugmentingPathEdge =
+            (step.type === 'FOUND_AUGMENTING_PATH' || step.type === 'AUGMENT') &&
+            highlightSet.has(e.u) &&
+            highlightSet.has(e.v);
+
+          const isBlossomEdge = isBlossomEvent && blossomVertexSet.has(e.u) && blossomVertexSet.has(e.v);
+          
+          const strokeColor = isBlossomEdge
+            ? 'purple' // 3. Blossom event (purple)
+            : isHighlightEdge
+            ? 'blue' // 1. Traversed/considered (blue)
+            : isAugmentingPathEdge
+            ? '#ff5722' // Augmenting path (original orange-red)
+            : isMatch
+            ? '#d32f2f' // 2. Matching (red)
+            : '#b0bec5'; // Default (grey)
+
+          const strokeWidth =
+            isBlossomEdge || isHighlightEdge || isAugmentingPathEdge
+              ? 4
+              : isMatch
+              ? 3
+              : 1.5;
+          // --- End Updated Color Logic ---
 
           return (
             <line
@@ -77,10 +126,8 @@ export const GraphView: React.FC<GraphViewProps> = ({ step }) => {
               y1={u.y}
               x2={v.x}
               y2={v.y}
-              stroke={
-                inPath ? '#ff5722' : isMatch ? '#e91e63' : '#b0bec5'
-              }
-              strokeWidth={inPath ? 4 : isMatch ? 3 : 1.5}
+              stroke={strokeColor}      // <-- Use new variable
+              strokeWidth={strokeWidth} // <-- Use new variable
             />
           );
         })}
@@ -88,7 +135,11 @@ export const GraphView: React.FC<GraphViewProps> = ({ step }) => {
         {positionedVertices.map(v => {
           const fill = getVertexFill(v.id);
           const exposed = isExposed(v.id);
-          const inPath = highlightSet.has(v.id);
+          // Use augmenting path logic for vertex highlight
+          const inPath =
+            (step.type === 'FOUND_AUGMENTING_PATH' ||
+              step.type === 'AUGMENT') &&
+            highlightSet.has(v.id);
 
           return (
             <g key={v.id}>
