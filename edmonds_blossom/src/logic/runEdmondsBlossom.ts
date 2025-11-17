@@ -387,6 +387,6 @@ export function runEdmondsBlossom(vertices: VertexId[], edges: Edge[]): BlossomS
     for (const root of Array.from(blossomMap.keys())) {
         expandBlossom(root, `Final expansion of blossom B${indexToId[root]} for visualization.`);
     }
-    makeStep('DONE', `Algorithm finished. Maximum matching found. Final size: ${getMatchingEdges().length}.`, []);
+    makeStep('DONE', `Algorithm finished. Maximum matching found. Final size: ${getMatchingEdges().length}`, []);
     return steps;
 }

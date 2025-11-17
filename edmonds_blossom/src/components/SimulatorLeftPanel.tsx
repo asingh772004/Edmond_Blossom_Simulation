@@ -21,6 +21,26 @@ export const SimulatorLeftPanel: React.FC<SimulatorLeftPanelProps> = ({
   onChangeEdges,
   onRun,
 }) => {
+  
+  const renderDescription = () => {
+    if (!currentStep) return "Enter a graph and run the algorithm to see steps here.";
+    if (currentStep.type === 'DONE') {
+      const parts = currentStep.description.split('Final size:');
+      return (
+        <>
+          {parts[0]}
+          {parts[1] && (
+            <>
+              <br />
+              <strong>Final size:{parts[1]}</strong>
+            </>
+          )}
+        </>
+      );
+    }
+    return currentStep.description;
+  };
+
   return (
     <div className="simulator-left-panel-root">
       <GraphInputForm
@@ -35,8 +55,9 @@ export const SimulatorLeftPanel: React.FC<SimulatorLeftPanelProps> = ({
           <div className="step-info-header">
             Step {currentStep.id}
           </div>
+          {/* Use the new render function */}
           <div className="step-info-content">
-            {currentStep.description}
+            {renderDescription()}
           </div>
         </div>
       ) : (
@@ -45,7 +66,7 @@ export const SimulatorLeftPanel: React.FC<SimulatorLeftPanelProps> = ({
             Step Info
           </div>
           <div className="step-info-content step-placeholder">
-            Enter a graph and run the algorithm to see steps here.
+            {renderDescription()}
           </div>
         </div>
       )}
