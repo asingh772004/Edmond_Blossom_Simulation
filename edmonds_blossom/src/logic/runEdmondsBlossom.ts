@@ -344,7 +344,7 @@ const findPath = (startNode: number): boolean => {
         
                 let curU = u;
                 while(curU !== NO_MATCH && Base[curU] !== root) {
-                    const mateU = Mate[curU];
+                    const mateU = MatchingArray[curU];
                     if (mateU === NO_MATCH) break;
                     const parentU = Par[mateU];
                     if (parentU === NO_MATCH) break;
@@ -356,7 +356,7 @@ const findPath = (startNode: number): boolean => {
         
                 let curV = v;
                 while(curV !== NO_MATCH && Base[curV] !== root) {
-                    const mateV = Mate[curV];
+                    const mateV = MatchingArray[curV];
                     if (mateV === NO_MATCH) break;
                     const parentV = Par[mateV];
                     if (parentV === NO_MATCH) break;
