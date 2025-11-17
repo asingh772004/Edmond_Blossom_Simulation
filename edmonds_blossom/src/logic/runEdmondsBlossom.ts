@@ -16,7 +16,7 @@ const STATUS_UNLABELED = 0;
 const STATUS_OUTER = 1;
 const STATUS_INNER = 2;
 
-let Mate: number[] = [];
+let MatchingArray: number[] = [];
 let Par: number[] = [];
 let Base: number[] = [];
 let Status: number[] = [];
@@ -56,7 +56,7 @@ const mapVertexToDisplay = (
 const getMatchingEdges = (expandBase?: number): MatchingEdge[] => {
     const currentMatching: MatchingEdge[] = [];
     for (let i = 1; i <= n; i++) {
-        const j = Mate[i];
+        const j = MatchingArray[i];
         if (j === NO_MATCH || j < i) continue;
 
         const du = mapVertexToDisplay(i, expandBase);
@@ -139,7 +139,7 @@ const makeStep = (
         else if (Status[i] === STATUS_INNER) layers[id] = 'ODD';
         else layers[id] = 'UNLABELED';
         parentMap[id] = Par[i] === NO_MATCH ? null : indexToId[Par[i]];
-        if (Mate[i] === NO_MATCH) exposed.push(id);
+        if (MatchingArray[i] === NO_MATCH) exposed.push(id);
     }
     blossomMap.forEach((members, baseIndex) => {
         currentBlossoms.push({
@@ -209,10 +209,10 @@ const lca = (aStart: number, bStart: number): number => {
         a = Base[a];
         if (a === 0) break;
         visited[a] = true;
-        if (Mate[a] === NO_MATCH) {
+        if (MatchingArray[a] === NO_MATCH) {
             a = NO_MATCH;
         } else {
-            const p = Par[Mate[a]];
+            const p = Par[MatchingArray[a]];
             if (p === NO_MATCH) {
                 a = NO_MATCH;
             } else {
@@ -226,10 +226,10 @@ const lca = (aStart: number, bStart: number): number => {
         b = Base[b];
         if (b === 0) break;
         if (visited[b]) return b;
-        if (Mate[b] === NO_MATCH) {
+        if (MatchingArray[b] === NO_MATCH) {
             b = NO_MATCH;
         } else {
-            const p = Par[Mate[b]];
+            const p = Par[MatchingArray[b]];
             if (p === NO_MATCH) {
                 b = NO_MATCH;
             } else {
@@ -245,7 +245,7 @@ const markPath = (v: number, b: number, x: number) => {
     let u = v;
     while (u !== NO_MATCH && Base[u] !== b) {
         Par[u] = x;
-        x = Mate[u];
+        x = MatchingArray[u];
 
         if (x === NO_MATCH) {
             Base[u] = b;
@@ -296,9 +296,9 @@ const augment = (v: number) => {
             expandBlossom(Base[cur], `Expanding blossom B${indexToId[Base[cur]]} to continue augmentation path.`);
         }
         const p = Par[cur];
-        const next = p === NO_MATCH ? NO_MATCH : Mate[p];
-        Mate[cur] = p;
-        if (p !== NO_MATCH) Mate[p] = cur;
+        const next = p === NO_MATCH ? NO_MATCH : MatchingArray[p];
+        MatchingArray[cur] = p;
+        if (p !== NO_MATCH) MatchingArray[p] = cur;
         cur = next;
     }
 };
@@ -320,7 +320,7 @@ const findPath = (startNode: number): boolean => {
             if (Status[v] === STATUS_UNLABELED) {
                 Status[v] = STATUS_INNER;
                 Par[v] = u;
-                if (Mate[v] === NO_MATCH) {
+                if (MatchingArray[v] === NO_MATCH) {
                     const pathBeforeAug = tracePath(startNode, v).map(i => indexToId[i]);
                     makeStep('FOUND_AUGMENTING_PATH', `Augmenting path P found ending at exposed vertex ${indexToId[v]}.`, pathBeforeAug);
                     augment(v);
@@ -328,7 +328,7 @@ const findPath = (startNode: number): boolean => {
                     makeStep('AUGMENT', `Matching successfully augmented along P. Matching size increased.`, pathAfterAug);
                     return true;
                 } else {
-                    const mv = Mate[v];
+                    const mv = MatchingArray[v];
                     Status[mv] = STATUS_OUTER;
                     pushQ(mv);
                     makeStep('BFS_SEARCH', `Matched edge ${indexToId[v]}-${indexToId[mv]} added to the alternating tree.`, [], findEdge(v, mv));
@@ -353,7 +353,7 @@ export function runEdmondsBlossom(vertices: VertexId[], edges: Edge[]): BlossomS
     n = vertices.length;
     MAX_N = Math.max(2, n + 5);
     NO_MATCH = -1;
-    Mate = new Array<number>(MAX_N).fill(NO_MATCH);
+    MatchingArray = new Array<number>(MAX_N).fill(NO_MATCH);
     Par = new Array<number>(MAX_N).fill(NO_MATCH);
     Base = new Array<number>(MAX_N).fill(0);
     Status = new Array<number>(MAX_N).fill(STATUS_UNLABELED);
@@ -377,7 +377,7 @@ export function runEdmondsBlossom(vertices: VertexId[], edges: Edge[]): BlossomS
     while (improved) {
         improved = false;
         for (let i = 1; i <= n; i++) {
-            if (Mate[i] === NO_MATCH) {
+            if (MatchingArray[i] === NO_MATCH) {
                 makeStep('START_BFS', `Starting BFS from exposed vertex ${indexToId[i]}.`, []);
                 if (findPath(i)) { improved = true; totalAug++; break; }
                 else makeStep('BFS_SEARCH', `No augmenting path found from ${indexToId[i]}.`, []);
