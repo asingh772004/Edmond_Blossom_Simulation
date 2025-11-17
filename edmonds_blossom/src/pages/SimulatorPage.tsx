@@ -17,7 +17,7 @@ export const SimulatorPage: React.FC = () => {
   const [steps, setSteps] = useState<BlossomStep[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [intervalMs, setIntervalMs] = useState(1000);
+  const [intervalMs, setIntervalMs] = useState(600);
 
   const handleRun = (vs: VertexId[], es: Edge[]) => {
     setVertices(vs);
