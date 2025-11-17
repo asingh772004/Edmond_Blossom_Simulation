@@ -10,7 +10,7 @@ import type {
 
 let n = 0;
 let MAX_N = 0;
-let NO_MATCH = 0;
+let NO_MATCH = -1;
 const STATUS_UNLABELED = 0;
 const STATUS_OUTER = 1;
 const STATUS_INNER = 2;
@@ -59,7 +59,9 @@ const buildCurrentGraph = (expandBase?: number): ContractedGraph => {
     const contractedGraph: ContractedGraph = { vertices: [], edges: [] };
     const baseToDisplayId = new Map<number, string>();
     const baseSet = new Set<number>();
-    for (let i = 1; i <= n; i++) baseSet.add(Base[i]);
+    for (let i = 1; i <= n; i++) {
+        if (Base[i] > 0) baseSet.add(Base[i]);
+    }
     for (const b of baseSet) {
         if (blossomMap.has(b) && expandBase !== b) {
             baseToDisplayId.set(b, `B${indexToId[b]}`);
@@ -72,8 +74,10 @@ const buildCurrentGraph = (expandBase?: number): ContractedGraph => {
                     contractedGraph.vertices.push(indexToId[m]);
                 }
             } else {
-                baseToDisplayId.set(b, indexToId[b]);
-                contractedGraph.vertices.push(indexToId[b]);
+                if (b > 0 && b < indexToId.length) {
+                    baseToDisplayId.set(b, indexToId[b]);
+                    contractedGraph.vertices.push(indexToId[b]);
+                }
             }
         }
     }
@@ -81,7 +85,7 @@ const buildCurrentGraph = (expandBase?: number): ContractedGraph => {
         const bu = Base[u];
         if (expandBase !== undefined && blossomMap.has(bu) && bu === expandBase) return indexToId[u];
         if (blossomMap.has(bu) && expandBase !== bu) return `B${indexToId[bu]}`;
-        return indexToId[bu];
+        return indexToId[u];
     };
     const edgeSet = new Set<string>();
     for (const edge of initialEdges) {
@@ -162,36 +166,63 @@ const tracePath = (startNode: number, endNode: number): number[] => {
 };
 
 const lca = (aStart: number, bStart: number): number => {
-    const visited = new Array<boolean>(n + 1).fill(false);
+    const visited = new Array<boolean>(MAX_N).fill(false);
+
     let a = aStart;
-    while (true) {
+    while (a !== NO_MATCH) {
         a = Base[a];
+        if (a === 0) break;
         visited[a] = true;
-        if (Mate[a] === NO_MATCH) break;
-        a = Base[Par[Mate[a]]];
+        if (Mate[a] === NO_MATCH) {
+            a = NO_MATCH;
+        } else {
+            const p = Par[Mate[a]];
+            if (p === NO_MATCH) {
+                a = NO_MATCH;
+            } else {
+                a = Base[p];
+            }
+        }
     }
+
     let b = bStart;
-    while (true) {
+    while (b !== NO_MATCH) {
         b = Base[b];
+        if (b === 0) break;
         if (visited[b]) return b;
-        if (Mate[b] === NO_MATCH) break;
-        b = Base[Par[Mate[b]]];
+        if (Mate[b] === NO_MATCH) {
+            b = NO_MATCH;
+        } else {
+            const p = Par[Mate[b]];
+            if (p === NO_MATCH) {
+                b = NO_MATCH;
+            } else {
+                b = Base[p];
+            }
+        }
     }
+
     return 0;
 };
 
 const markPath = (v: number, b: number, x: number) => {
     let u = v;
-    while (Base[u] !== b) {
+    while (u !== NO_MATCH && Base[u] !== b) {
         Par[u] = x;
         x = Mate[u];
-        if (Status[x] === STATUS_INNER) {
-            Status[x] = STATUS_OUTER;
-            pushQ(x);
+
+        if (x === NO_MATCH) {
+            Base[u] = b;
+            u = NO_MATCH;
+        } else {
+            if (Status[x] === STATUS_INNER) {
+                Status[x] = STATUS_OUTER;
+                pushQ(x);
+            }
+            Base[u] = b;
+            Base[x] = b;
+            u = Par[x];
         }
-        Base[u] = b;
-        Base[x] = b;
-        u = Par[x];
     }
 };
 
@@ -265,6 +296,7 @@ const findPath = (startNode: number): boolean => {
                 }
             } else if (Status[v] === STATUS_OUTER) {
                 const root = lca(u, v);
+                if (root === 0) continue;
                 const e = findEdge(u, v);
                 makeStep('BLOSSOM_DETECTED', `Blossom detected: edge ${indexToId[u]}-${indexToId[v]} connects two outer nodes. Base: ${indexToId[root]}.`, [], e, undefined);
                 contract(u, v, root);
@@ -281,7 +313,7 @@ export function runEdmondsBlossom(vertices: VertexId[], edges: Edge[]): BlossomS
     qHead = 0;
     n = vertices.length;
     MAX_N = Math.max(2, n + 5);
-    NO_MATCH = 0;
+    NO_MATCH = -1;
     Mate = new Array<number>(MAX_N).fill(NO_MATCH);
     Par = new Array<number>(MAX_N).fill(NO_MATCH);
     Base = new Array<number>(MAX_N).fill(0);
@@ -292,6 +324,7 @@ export function runEdmondsBlossom(vertices: VertexId[], edges: Edge[]): BlossomS
     initialEdges = edges.slice();
     blossomMap.clear();
     vertices.forEach((v, i) => { idToIndex.set(v, i + 1); indexToId[i + 1] = v; });
+    for (let i = 1; i <= n; i++) Base[i] = i;
     edges.forEach(e => {
         const u = idToIndex.get(e.u);
         const v = idToIndex.get(e.v);
@@ -300,7 +333,6 @@ export function runEdmondsBlossom(vertices: VertexId[], edges: Edge[]): BlossomS
         Adj[v].push(u);
     });
     makeStep('INIT', `Initial graph with ${n} vertices.`, []);
-    Mate.fill(NO_MATCH, 0, MAX_N);
     let improved = true;
     let totalAug = 0;
     while (improved) {

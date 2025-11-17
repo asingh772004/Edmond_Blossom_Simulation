@@ -13,10 +13,6 @@ interface SimulatorLeftPanelProps {
   onRun: (vs: VertexId[], es: Edge[]) => void;
 }
 
-/**
- * The left panel of the simulator, containing graph input
- * and algorithm step information.
- */
 export const SimulatorLeftPanel: React.FC<SimulatorLeftPanelProps> = ({
   vertices,
   edges,
