@@ -1,4 +1,4 @@
-# Edmond_Blossom_Simulation
+# Edmond Blossom Simulation
 
 A web-based interactive tool to visualize the steps of the **Edmonds Blossom Algorithm** for finding a maximum cardinality matching in general graphs.
 
