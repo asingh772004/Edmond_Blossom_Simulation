@@ -35,7 +35,7 @@ export const SimulatorPage: React.FC = () => {
     const id = window.setInterval(() => {
       setCurrentStepIndex(prev => {
         if (prev >= steps.length - 1) {
-          setPlaying(false); // Stop playing at the end
+          setPlaying(false);
           return prev;
         }
         return prev + 1;
