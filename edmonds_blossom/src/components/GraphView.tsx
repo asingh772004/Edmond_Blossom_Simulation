@@ -1,7 +1,7 @@
 // src/components/GraphView.tsx
 import React, { useMemo } from 'react';
 import '../components_css/GraphView.css';
-import type { BlossomStep } from '../logic/blossomTypes';
+import type { BlossomStep, Edge } from '../logic/blossomTypes';
 
 interface GraphViewProps {
   step: BlossomStep;
@@ -18,12 +18,12 @@ export const GraphView: React.FC<GraphViewProps> = ({ step }) => {
   const svgSize = 460;
 
   const positionedVertices: PositionedVertex[] = useMemo(() => {
-    const n = step.graph.vertices.length;
+    const n = step.currentGraph.vertices.length;
     const cx = svgSize / 2;
     const cy = svgSize / 2;
     const r = Math.min(svgSize / 2 - 40, 180);
 
-    return step.graph.vertices.map((v, i) => {
+    return step.currentGraph.vertices.map((v, i) => {
       const angle = (2 * Math.PI * i) / Math.max(1, n);
       return {
         id: v,
@@ -39,10 +39,16 @@ export const GraphView: React.FC<GraphViewProps> = ({ step }) => {
     return m;
   }, [positionedVertices]);
 
-  const isMatchingEdge = (edgeId: string) =>
-    step.matching.some(e => e.id === edgeId);
+  const isMatchingEdge = (edge: Edge) =>
+    step.matching.some(me =>
+      (me.u === edge.u && me.v === edge.v) ||
+      (me.u === edge.v && me.v === edge.u)
+    );
 
   const getVertexFill = (id: string) => {
+    if (id.startsWith('B')) {
+      return '#9c27b0';
+    }
     const layer = step.layers[id] ?? 'UNLABELED';
     if (layer === 'EVEN') return '#4caf50';
     if (layer === 'ODD') return '#ff9800';
@@ -66,7 +72,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ step }) => {
         isEvent = true;
       }
     }
-    return [isEvent, vertexSet];
+
+    return [isEvent, vertexSet] as const;
+
+
   }, [step.type, step.highlightPath, step.blossoms, step.activeBlossomId]);
 
   const highlightSet = new Set(step.highlightPath);
@@ -79,13 +88,12 @@ export const GraphView: React.FC<GraphViewProps> = ({ step }) => {
         height={svgSize}
         viewBox={`0 0 ${svgSize} ${svgSize}`}
       >
-        {step.graph.edges.map(e => {
+        {step.currentGraph.edges.map(e => {
           const u = posMap.get(e.u);
           const v = posMap.get(e.v);
           if (!u || !v) return null;
 
-          // --- Updated Color Logic ---
-          const isMatch = isMatchingEdge(e.id);
+          const isMatch = isMatchingEdge(e);
           const isHighlightEdge = step.highlightEdge?.id === e.id;
 
           const isAugmentingPathEdge =
@@ -94,24 +102,23 @@ export const GraphView: React.FC<GraphViewProps> = ({ step }) => {
             highlightSet.has(e.v);
 
           const isBlossomEdge = isBlossomEvent && blossomVertexSet.has(e.u) && blossomVertexSet.has(e.v);
-          
+
           const strokeColor = isBlossomEdge
-            ? 'purple' // 3. Blossom event (purple)
+            ? 'purple'
             : isHighlightEdge
-            ? 'blue' // 1. Traversed/considered (blue)
-            : isAugmentingPathEdge
-            ? '#ff5722' // Augmenting path (original orange-red)
-            : isMatch
-            ? '#d32f2f' // 2. Matching (red)
-            : '#b0bec5'; // Default (grey)
+              ? 'blue'
+              : isAugmentingPathEdge
+                ? '#ff5722'
+                : isMatch
+                  ? '#d32f2f'
+                  : '#b0bec5';
 
           const strokeWidth =
             isBlossomEdge || isHighlightEdge || isAugmentingPathEdge
               ? 4
               : isMatch
-              ? 3
-              : 1.5;
-          // --- End Updated Color Logic ---
+                ? 3
+                : 1.5;
 
           return (
             <line
@@ -120,8 +127,8 @@ export const GraphView: React.FC<GraphViewProps> = ({ step }) => {
               y1={u.y}
               x2={v.x}
               y2={v.y}
-              stroke={strokeColor}      // <-- Use new variable
-              strokeWidth={strokeWidth} // <-- Use new variable
+              stroke={strokeColor}
+              strokeWidth={strokeWidth}
             />
           );
         })}
@@ -129,7 +136,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ step }) => {
         {positionedVertices.map(v => {
           const fill = getVertexFill(v.id);
           const exposed = isExposed(v.id);
-          // Use augmenting path logic for vertex highlight
+
           const inPath =
             (step.type === 'FOUND_AUGMENTING_PATH' ||
               step.type === 'AUGMENT') &&
@@ -146,8 +153,8 @@ export const GraphView: React.FC<GraphViewProps> = ({ step }) => {
                   inPath
                     ? '#ff5722'
                     : exposed
-                    ? '#d32f2f'
-                    : '#263238'
+                      ? '#d32f2f'
+                      : '#263238'
                 }
                 strokeWidth={inPath || exposed ? 3 : 1.5}
               />

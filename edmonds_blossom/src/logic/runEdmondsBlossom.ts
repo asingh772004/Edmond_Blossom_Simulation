@@ -1,3 +1,4 @@
+// src/logic/runEdmondsBlossom.ts
 import type {
     BlossomStep,
     Edge,
@@ -40,17 +41,38 @@ const popQ = (): number | undefined => {
 };
 const clearQ = () => { Queue.length = 0; qHead = 0; };
 
-const getMatchingEdges = (): MatchingEdge[] => {
+const mapVertexToDisplay = (
+    u: number,
+    expandBase?: number
+): string => {
+    const bu = Base[u];
+    if (expandBase !== undefined && blossomMap.has(bu) && bu === expandBase)
+        return indexToId[u];
+    if (blossomMap.has(bu) && expandBase !== bu)
+        return `B${indexToId[bu]}`;
+    return indexToId[u];
+};
+
+const getMatchingEdges = (expandBase?: number): MatchingEdge[] => {
     const currentMatching: MatchingEdge[] = [];
     for (let i = 1; i <= n; i++) {
         const j = Mate[i];
         if (j === NO_MATCH || j < i) continue;
+
+        const du = mapVertexToDisplay(i, expandBase);
+        const dv = mapVertexToDisplay(j, expandBase);
+
+        if (du === dv) continue;
+
         const idU = indexToId[i];
         const idV = indexToId[j];
         const edge = initialEdges.find(
             e => (e.u === idU && e.v === idV) || (e.u === idV && e.v === idU)
         );
-        if (edge) currentMatching.push({ ...edge });
+
+        if (edge) {
+            currentMatching.push({ ...edge, u: du, v: dv });
+        }
     }
     return currentMatching;
 };
@@ -81,22 +103,18 @@ const buildCurrentGraph = (expandBase?: number): ContractedGraph => {
             }
         }
     }
-    const mapVertexToDisplay = (u: number) => {
-        const bu = Base[u];
-        if (expandBase !== undefined && blossomMap.has(bu) && bu === expandBase) return indexToId[u];
-        if (blossomMap.has(bu) && expandBase !== bu) return `B${indexToId[bu]}`;
-        return indexToId[u];
-    };
+
     const edgeSet = new Set<string>();
     for (const edge of initialEdges) {
         const u = idToIndex.get(edge.u)!;
         const v = idToIndex.get(edge.v)!;
-        const du = mapVertexToDisplay(u);
-        const dv = mapVertexToDisplay(v);
+        const du = mapVertexToDisplay(u, expandBase);
+        const dv = mapVertexToDisplay(v, expandBase);
         if (du === dv) continue;
+
         const edgeId = [du, dv].sort().join('-');
         if (!edgeSet.has(edgeId)) {
-            contractedGraph.edges.push({ id: edgeId, u: du, v: dv });
+            contractedGraph.edges.push({ id: edge.id, u: du, v: dv });
             edgeSet.add(edgeId);
         }
     }
@@ -130,19 +148,37 @@ const makeStep = (
             vertices: members.map(i => indexToId[i]),
         });
     });
+
+    let currentHighlightEdge: Edge | undefined = undefined;
+    if (highlightEdge) {
+        const u = idToIndex.get(highlightEdge.u)!;
+        const v = idToIndex.get(highlightEdge.v)!;
+        const du = mapVertexToDisplay(u, expandBlossomBase);
+        const dv = mapVertexToDisplay(v, expandBlossomBase);
+
+        if (du !== dv) {
+            currentHighlightEdge = {
+                ...highlightEdge,
+                id: highlightEdge.id,
+                u: du,
+                v: dv
+            };
+        }
+    }
+
     const step: BlossomStep = {
         id: stepId++,
         type,
         description,
         graph: { vertices: indexToId.slice(1), edges: initialEdges.map(e => ({ ...e })) },
         currentGraph: buildCurrentGraph(expandBlossomBase),
-        matching: getMatchingEdges(),
+        matching: getMatchingEdges(expandBlossomBase),
         layers,
         exposedVertices: exposed,
         parent: parentMap,
         blossoms: currentBlossoms,
         highlightPath,
-        highlightEdge: highlightEdge ? { ...highlightEdge } : undefined,
+        highlightEdge: currentHighlightEdge ? { ...currentHighlightEdge } : undefined,
         activeBlossomId,
     };
     steps.push(step);
@@ -248,6 +284,9 @@ const expandBlossom = (root: number, reasonDescription?: string) => {
         root
     );
     blossomMap.delete(root);
+    for (const m of members) {
+        Base[m] = m;
+    }
 };
 
 const augment = (v: number) => {
@@ -267,7 +306,7 @@ const augment = (v: number) => {
 const findPath = (startNode: number): boolean => {
     Status.fill(STATUS_UNLABELED, 0, n + 1);
     Par.fill(NO_MATCH, 0, n + 1);
-    for (let i = 1; i <= n; i++) Base[i] = i;
+
     clearQ();
     pushQ(startNode);
     Status[startNode] = STATUS_OUTER;

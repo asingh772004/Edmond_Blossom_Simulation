@@ -18,10 +18,6 @@ interface SimulatorRightPanelProps {
   onChangeInterval: (ms: number) => void;
 }
 
-/**
- * The right panel of the simulator, containing the controls
- * and the graph visualization.
- */
 export const SimulatorRightPanel: React.FC<SimulatorRightPanelProps> = ({
   currentStep,
   hasSteps,
